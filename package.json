@@ -1,0 +1,34 @@
+{
+  "name": "race-blur-detector",
+  "version": "1.0.0",
+  "description": "Detect and cull blurry photos from running race shoots",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "jest",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "electron": "^40.0.0",
+    "electron-builder": "^26.0.0",
+    "jest": "^30.2.0"
+  },
+  "build": {
+    "appId": "com.raceblur.detector",
+    "productName": "Race Blur Detector",
+    "mac": {
+      "category": "public.app-category.photography"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html"
+    ]
+  }
+}

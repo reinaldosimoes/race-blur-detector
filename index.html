@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Race Blur Detector</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    :root {
+      --bg-primary: #0e0e10;
+      --bg-secondary: #18181b;
+      --bg-tertiary: #1e1e22;
+      --bg-card: #222226;
+      --border: #2a2a2e;
+      --border-hover: #3a3a3e;
+      --text-primary: #f0f0f2;
+      --text-secondary: #a0a0a8;
+      --text-dim: #606068;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --red: #ef4444;
+      --red-dim: rgba(239, 68, 68, 0.15);
+      --green: #22c55e;
+      --green-dim: rgba(34, 197, 94, 0.15);
+      --yellow: #eab308;
+      --yellow-dim: rgba(234, 179, 8, 0.15);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      overflow: hidden;
+      height: 100vh;
+      -webkit-app-region: drag;
+      user-select: none;
+    }
+
+    button, input, select { -webkit-app-region: no-drag; }
+
+    .grid-container,
+    .photo-card,
+    .lightbox,
+    .welcome {
+      -webkit-app-region: no-drag;
+    }
+
+    .app { display: flex; flex-direction: column; height: 100vh; }
+
+    .titlebar {
+      height: 52px;
+      display: flex;
+      align-items: center;
+      padding: 0 20px 0 80px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .titlebar h1 {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    .titlebar h1 span { color: var(--accent); }
+
+    .main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+    /* ── Welcome ─────────────────────────────── */
+    .welcome {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    .welcome-inner { text-align: center; max-width: 480px; }
+
+    .welcome-icon {
+      width: 80px; height: 80px;
+      border-radius: 20px;
+      background: var(--bg-tertiary);
+      border: 2px dashed var(--border);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+      font-size: 32px;
+      transition: all 0.2s;
+    }
+
+    .welcome-inner:hover .welcome-icon {
+      border-color: var(--accent);
+      background: rgba(59, 130, 246, 0.08);
+    }
+
+    .welcome h2 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+
+    .welcome p {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    /* ── Buttons ──────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 20px; border-radius: 8px; border: none;
+      font-family: inherit; font-size: 14px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s;
+      -webkit-app-region: no-drag;
+    }
+
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-danger { background: var(--red); color: white; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-ghost {
+      background: var(--bg-tertiary); color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover {
+      background: var(--bg-card); color: var(--text-primary);
+      border-color: var(--border-hover);
+    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Toolbar ──────────────────────────────── */
+    .toolbar {
+      display: flex; align-items: center; gap: 16px;
+      padding: 12px 20px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0; flex-wrap: wrap;
+    }
+
+    .toolbar-section { display: flex; align-items: center; gap: 8px; }
+
+    .toolbar label {
+      font-size: 12px; font-weight: 500;
+      color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
+    .threshold-group { display: flex; align-items: center; gap: 10px; }
+
+    .threshold-slider {
+      -webkit-appearance: none;
+      width: 140px; height: 4px;
+      border-radius: 2px; background: var(--bg-card); outline: none;
+    }
+
+    .threshold-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 50%; background: var(--accent);
+      cursor: pointer; border: 2px solid var(--bg-primary);
+    }
+
+    .threshold-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px; color: var(--text-primary);
+      background: var(--bg-tertiary);
+      padding: 4px 8px; border-radius: 4px;
+      min-width: 42px; text-align: center;
+    }
+
+    .spacer { flex: 1; }
+
+    .stats { display: flex; gap: 16px; font-size: 13px; }
+
+    .stat { display: flex; align-items: center; gap: 6px; }
+
+    .stat-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .stat-dot.sharp { background: var(--green); }
+    .stat-dot.blurry { background: var(--red); }
+    .stat-dot.borderline { background: var(--yellow); }
+
+    .stat-count { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+
+    .center-weight-label { font-size: 11px; color: var(--text-dim); font-style: italic; }
+
+    /* ── Progress ─────────────────────────────── */
+    .progress-bar-container { height: 3px; background: var(--bg-tertiary); flex-shrink: 0; }
+    .progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.15s; }
+
+    /* ── Grid ─────────────────────────────────── */
+    .grid-container { flex: 1; overflow-y: auto; padding: 16px; }
+    .grid-container::-webkit-scrollbar { width: 8px; }
+    .grid-container::-webkit-scrollbar-track { background: transparent; }
+    .grid-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 8px;
+    }
+
+    .photo-card {
+      position: relative; border-radius: 8px; overflow: hidden;
+      background: var(--bg-secondary);
+      border: 2px solid transparent;
+      cursor: pointer; transition: all 0.15s;
+      aspect-ratio: 3 / 2;
+    }
+
+    .photo-card:hover { border-color: var(--border-hover); transform: translateY(-1px); }
+    .photo-card.selected { border-color: var(--accent); }
+    .photo-card.blurry { border-color: rgba(239, 68, 68, 0.4); }
+    .photo-card.borderline { border-color: rgba(234, 179, 8, 0.3); }
+
+    .photo-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    .photo-card .overlay {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 8px 10px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.85));
+      display: flex; align-items: flex-end; justify-content: space-between;
+    }
+
+    .photo-card .filename {
+      font-size: 11px; color: rgba(255,255,255,0.7);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%;
+    }
+
+    .photo-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; font-weight: 500;
+      padding: 2px 6px; border-radius: 4px;
+    }
+
+    .photo-badge.sharp { background: var(--green-dim); color: var(--green); }
+    .photo-badge.blurry { background: var(--red-dim); color: var(--red); }
+    .photo-badge.borderline { background: var(--yellow-dim); color: var(--yellow); }
+
+    .photo-card .checkbox {
+      position: absolute; top: 8px; left: 8px;
+      width: 22px; height: 22px;
+      border-radius: 5px;
+      border: 2px solid rgba(255,255,255,0.4);
+      background: rgba(0,0,0,0.4);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.15s; font-size: 13px;
+    }
+
+    .photo-card:hover .checkbox, .photo-card.selected .checkbox { opacity: 1; }
+
+    .photo-card.selected .checkbox {
+      background: var(--accent); border-color: var(--accent);
+    }
+
+    /* ── Filter Tabs ──────────────────────────── */
+    .filter-tabs {
+      display: flex; gap: 2px;
+      background: var(--bg-tertiary); padding: 2px; border-radius: 6px;
+    }
+
+    .filter-tab {
+      padding: 5px 12px; font-size: 12px; font-weight: 500;
+      border: none; background: transparent;
+      color: var(--text-secondary); cursor: pointer;
+      border-radius: 4px; font-family: inherit; transition: all 0.15s;
+    }
+
+    .filter-tab:hover { color: var(--text-primary); }
+
+    .filter-tab.active {
+      background: var(--bg-card); color: var(--text-primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    /* ── Action Bar ───────────────────────────── */
+    .action-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border); flex-shrink: 0;
+    }
+
+    .action-bar .selection-info { font-size: 13px; color: var(--text-secondary); }
+    .action-bar .selection-info strong { color: var(--text-primary); }
+    .action-buttons { display: flex; gap: 8px; }
+
+    select {
+      font-family: inherit; font-size: 12px;
+      padding: 6px 10px; border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg-tertiary); color: var(--text-primary); cursor: pointer;
+    }
+
+    /* ── Lightbox ─────────────────────────────── */
+    .lightbox {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.92);
+      z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      cursor: zoom-out;
+    }
+
+    .lightbox img { max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 4px; }
+
+    .lightbox-info {
+      position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 16px;
+      background: var(--bg-card); padding: 10px 20px; border-radius: 8px;
+      border: 1px solid var(--border); font-size: 13px;
+    }
+
+    .hidden { display: none !important; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+      display: inline-block;
+    }
+
+    .scan-status {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="titlebar">
+      <h1><span>&#9632;</span> Race Blur Detector</h1>
+    </div>
+    <div class="main">
+      <!-- Welcome Screen -->
+      <div class="welcome" id="welcomeScreen">
+        <div class="welcome-inner">
+          <div class="welcome-icon">&#128247;</div>
+          <h2>Cull blurry race photos</h2>
+          <p>
+            Select a folder of JPEGs from your race shoot. The app scores
+            sharpness with extra weight on the center of each frame &mdash;
+            where runners usually are &mdash; so a sharp background with a
+            blurry subject still gets flagged.
+          </p>
+          <button class="btn btn-primary" id="btnSelectFolder">Choose Folder</button>
+        </div>
+      </div>
+
+      <!-- Work Screen -->
+      <div class="hidden" id="workScreen" style="flex-direction:column;flex:1;overflow:hidden;">
+        <div class="toolbar">
+          <div class="toolbar-section">
+            <label>Threshold</label>
+            <div class="threshold-group">
+              <input type="range" class="threshold-slider" id="thresholdSlider"
+                     min="20" max="400" value="100" step="5" />
+              <span class="threshold-value" id="thresholdValue">100</span>
+            </div>
+            <span class="center-weight-label">center-weighted</span>
+          </div>
+          <div class="toolbar-section">
+            <label>Show</label>
+            <div class="filter-tabs" id="filterTabs">
+              <button class="filter-tab active" data-filter="all">All</button>
+              <button class="filter-tab" data-filter="blurry">Blurry</button>
+              <button class="filter-tab" data-filter="borderline">Borderline</button>
+              <button class="filter-tab" data-filter="sharp">Sharp</button>
+            </div>
+          </div>
+          <div class="toolbar-section">
+            <label>Sort</label>
+            <select id="sortSelect">
+              <option value="score-asc">Blurriest first</option>
+              <option value="score-desc">Sharpest first</option>
+              <option value="name-asc">Name A-Z</option>
+            </select>
+          </div>
+          <div class="spacer"></div>
+          <div class="stats" id="statsBar">
+            <div class="stat"><div class="stat-dot sharp"></div><span>Sharp: </span><span class="stat-count" id="statSharp">0</span></div>
+            <div class="stat"><div class="stat-dot borderline"></div><span>Borderline: </span><span class="stat-count" id="statBorderline">0</span></div>
+            <div class="stat"><div class="stat-dot blurry"></div><span>Blurry: </span><span class="stat-count" id="statBlurry">0</span></div>
+          </div>
+          <div class="scan-status hidden" id="scanStatus">
+            <div class="spinner"></div>
+            <span id="scanText">Scanning...</span>
+            <button class="btn btn-ghost" id="btnStopScan" style="padding:4px 12px;font-size:12px;">Stop</button>
+          </div>
+        </div>
+        <div class="progress-bar-container"><div class="progress-bar" id="progressBar"></div></div>
+        <div class="grid-container" id="gridContainer">
+          <div class="photo-grid" id="photoGrid"></div>
+        </div>
+        <div class="action-bar">
+          <div class="selection-info" id="selectionInfo">Click photos to select, or use filters to auto-select</div>
+          <div class="action-buttons">
+            <button class="btn btn-ghost" id="btnSelectAllBlurry">Select All Blurry</button>
+            <button class="btn btn-ghost" id="btnDeselectAll">Deselect All</button>
+            <button class="btn btn-danger" id="btnMoveSelected" disabled>Move Selected to Review</button>
+            <button class="btn btn-ghost" id="btnNewFolder">New Folder</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox hidden" id="lightbox">
+    <img id="lightboxImg" src="" />
+    <div class="lightbox-info" id="lightboxInfo"></div>
+  </div>
+
+  <script>
+    // ── State ────────────────────────────────────
+    let folderPaths = [];
+    let photos = [];
+    let selected = new Set();
+    let currentFilter = "all";
+    let scanning = false;
+    let scanAborted = false;
+
+    const $ = (id) => document.getElementById(id);
+
+    // ── Blur Detection Engine ────────────────────
+    const ANALYSIS_SIZE = 800;
+    const CENTER_WEIGHT = 0.6;
+
+    function laplacianVariance(gray, w, h) {
+      let sum = 0, sumSq = 0, count = 0;
+      for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+          const idx = y * w + x;
+          const lap =
+            gray[(y - 1) * w + x] +
+            gray[(y + 1) * w + x] +
+            gray[y * w + (x - 1)] +
+            gray[y * w + (x + 1)] -
+            4 * gray[idx];
+          sum += lap;
+          sumSq += lap * lap;
+          count++;
+        }
+      }
+      const mean = sum / count;
+      return sumSq / count - mean * mean;
+    }
+
+    function analyzeImage(src) {
+      return new Promise((resolve) => {
+        let settled = false;
+        const img = new Image();
+
+        const timeout = setTimeout(() => {
+          if (!settled) {
+            settled = true;
+            resolve(-1);
+          }
+        }, 15000);
+
+        img.onload = () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeout);
+
+          let w = img.width, h = img.height;
+          const scale = ANALYSIS_SIZE / Math.max(w, h);
+          if (scale < 1) { w = Math.round(w * scale); h = Math.round(h * scale); }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext("2d", { willReadFrequently: true });
+          ctx.drawImage(img, 0, 0, w, h);
+
+          const data = ctx.getImageData(0, 0, w, h).data;
+          const gray = new Float32Array(w * h);
+          for (let i = 0; i < w * h; i++) {
+            gray[i] = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];
+          }
+
+          const fullScore = laplacianVariance(gray, w, h);
+
+          // Center crop (middle 40%)
+          const cx1 = Math.floor(w * 0.3), cx2 = Math.floor(w * 0.7);
+          const cy1 = Math.floor(h * 0.3), cy2 = Math.floor(h * 0.7);
+          const cw = cx2 - cx1, ch = cy2 - cy1;
+          const centerGray = new Float32Array(cw * ch);
+          for (let y = 0; y < ch; y++) {
+            for (let x = 0; x < cw; x++) {
+              centerGray[y * cw + x] = gray[(y + cy1) * w + (x + cx1)];
+            }
+          }
+          const centerScore = laplacianVariance(centerGray, cw, ch);
+
+          resolve(Math.round((CENTER_WEIGHT * centerScore + (1 - CENTER_WEIGHT) * fullScore) * 100) / 100);
+        };
+        img.onerror = () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeout);
+          resolve(-1);
+        };
+        img.src = src;
+      });
+    }
+
+    function classify(score, threshold) {
+      if (score < 0) return "error";
+      if (score < threshold * 0.7) return "blurry";
+      if (score < threshold) return "borderline";
+      return "sharp";
+    }
+
+    // ── Rendering ────────────────────────────────
+    function updateSelectionInfo() {
+      const count = selected.size;
+      if (count === 0) {
+        $("selectionInfo").textContent = "Click photos to select, or use filters to auto-select";
+        $("btnMoveSelected").disabled = scanning ? true : true;
+      } else {
+        $("selectionInfo").innerHTML = `<strong>${count}</strong> photo${count !== 1 ? "s" : ""} selected`;
+        $("btnMoveSelected").disabled = scanning;
+      }
+    }
+
+    function updateStats() {
+      $("statSharp").textContent = photos.filter((p) => p.status === "sharp").length;
+      $("statBorderline").textContent = photos.filter((p) => p.status === "borderline").length;
+      $("statBlurry").textContent = photos.filter((p) => p.status === "blurry").length;
+    }
+
+    function updateClassifications() {
+      const threshold = parseInt($("thresholdSlider").value);
+      photos.forEach((p) => { p.status = classify(p.score, threshold); });
+
+      const cards = $("photoGrid").querySelectorAll(".photo-card");
+      cards.forEach((card) => {
+        const p = photos.find((ph) => ph.path === card.dataset.path);
+        if (!p) return;
+        card.classList.remove("sharp", "blurry", "borderline");
+        card.classList.add(p.status);
+        const badge = card.querySelector(".photo-badge");
+        if (badge) {
+          badge.className = `photo-badge ${p.status}`;
+          badge.textContent = p.score >= 0 ? p.score.toFixed(0) : "err";
+        }
+        // Apply filter visibility
+        if (currentFilter === "all" || p.status === currentFilter) {
+          card.classList.remove("hidden");
+        } else {
+          card.classList.add("hidden");
+        }
+      });
+
+      updateStats();
+      updateSelectionInfo();
+    }
+
+    function renderGrid() {
+      const threshold = parseInt($("thresholdSlider").value);
+      const sort = $("sortSelect").value;
+
+      photos.forEach((p) => { p.status = classify(p.score, threshold); });
+
+      let visible = currentFilter === "all" ? photos : photos.filter((p) => p.status === currentFilter);
+
+      if (sort === "score-asc") visible.sort((a, b) => a.score - b.score);
+      else if (sort === "score-desc") visible.sort((a, b) => b.score - a.score);
+      else visible.sort((a, b) => a.name.localeCompare(b.name));
+
+      updateStats();
+
+      $("photoGrid").innerHTML = visible.map((p) => {
+        const sel = selected.has(p.path);
+        const imgSrc = p.thumbnail || ("file://" + encodeURI(p.path).replace(/#/g, "%23"));
+        return `<div class="photo-card ${p.status} ${sel ? "selected" : ""}" data-path="${p.path}">
+          <img src="${imgSrc}" loading="lazy" />
+          <div class="checkbox">${sel ? "&#10003;" : ""}</div>
+          <div class="overlay">
+            <span class="filename">${p.name}</span>
+            <span class="photo-badge ${p.status}">${p.score >= 0 ? p.score.toFixed(0) : "err"}</span>
+          </div>
+        </div>`;
+      }).join("");
+
+      updateSelectionInfo();
+    }
+
+    // ── Button State ─────────────────────────────
+    function setButtonsDisabled(disabled) {
+      const ids = ["btnNewFolder", "btnSelectAllBlurry", "btnDeselectAll", "btnMoveSelected", "thresholdSlider", "sortSelect"];
+      ids.forEach((id) => { $(id).disabled = disabled; });
+      document.querySelectorAll(".filter-tab").forEach((tab) => {
+        tab.style.pointerEvents = disabled ? "none" : "";
+        tab.style.opacity = disabled ? "0.4" : "";
+      });
+    }
+
+    // ── Scan Folder ──────────────────────────────
+    async function scanFolder(folders) {
+      folderPaths = Array.isArray(folders) ? folders : [folders];
+      photos = [];
+      selected.clear();
+      scanning = true;
+      scanAborted = false;
+      setButtonsDisabled(true);
+
+      $("welcomeScreen").style.display = "none";
+      const ws = $("workScreen");
+      ws.classList.remove("hidden");
+      ws.style.display = "flex";
+
+      $("scanStatus").classList.remove("hidden");
+      $("statsBar").classList.add("hidden");
+      $("progressBar").style.width = "0%";
+
+      try {
+        const files = await window.api.scanMultipleFolders(folderPaths);
+        if (files.error) { alert("Error: " + files.error); scanning = false; setButtonsDisabled(false); return; }
+
+        $("scanText").textContent = `Scanning ${files.length} photos...`;
+        const total = files.length;
+        const BATCH = 3;
+        let totalMs = 0;
+        let processedCount = 0;
+
+        for (let i = 0; i < total; i += BATCH) {
+          if (scanAborted) break;
+          const batchStart = Date.now();
+          const batch = files.slice(i, i + BATCH);
+          const results = await Promise.all(batch.map(async (f) => {
+            try {
+              const result = await Promise.race([
+                (async () => {
+                  const validation = await window.api.validateJpeg(f.path);
+                  if (!validation.valid) return { ...f, score: -1 };
+                  const fileUrl = "file://" + encodeURI(f.path).replace(/#/g, "%23");
+                  const score = await analyzeImage(fileUrl);
+                  // Generate thumbnail
+                  let thumbnail = null;
+                  try {
+                    const thumb = await window.api.generateThumbnail(f.path, 200);
+                    if (typeof thumb === "string") thumbnail = thumb;
+                  } catch {}
+                  return { ...f, score, thumbnail };
+                })(),
+                new Promise((resolve) => setTimeout(() => resolve({ ...f, score: -1 }), 30000))
+              ]);
+              return result;
+            } catch (err) {
+              return { ...f, score: -1 };
+            }
+          }));
+
+          const batchEnd = Date.now();
+          totalMs += batchEnd - batchStart;
+          processedCount += batch.length;
+          const avgMsPerFile = totalMs / processedCount;
+          const remaining = total - processedCount;
+
+          photos.push(...results);
+          $("progressBar").style.width = Math.min(100, ((i + batch.length) / total) * 100) + "%";
+
+          if (remaining > 0 && processedCount >= BATCH) {
+            const estMs = remaining * avgMsPerFile;
+            let estText;
+            if (estMs < 10000) estText = "< 10 sec";
+            else if (estMs < 45000) estText = "~30 sec";
+            else if (estMs < 90000) estText = "~1 min";
+            else estText = `~${Math.round(estMs / 60000)} min`;
+            $("scanText").textContent = `Scanning... ${processedCount} / ${total} — ${estText} remaining`;
+          } else {
+            $("scanText").textContent = `Scanning... ${processedCount} / ${total}`;
+          }
+
+          if (photos.length % 12 < BATCH || i + BATCH >= total) renderGrid();
+        }
+      } finally {
+        scanning = false;
+        setButtonsDisabled(false);
+      }
+      $("progressBar").style.width = "100%";
+      setTimeout(() => { $("progressBar").style.width = "0%"; }, 800);
+      $("scanStatus").classList.add("hidden");
+      $("statsBar").classList.remove("hidden");
+      renderGrid();
+    }
+
+    // ── Events ───────────────────────────────────
+    $("btnSelectFolder").addEventListener("click", async () => {
+      const folders = await window.api.selectFolders();
+      if (folders && folders.length > 0) scanFolder(folders);
+    });
+
+    $("btnNewFolder").addEventListener("click", async () => {
+      const folders = await window.api.selectFolders();
+      if (folders && folders.length > 0) scanFolder(folders);
+    });
+
+    $("thresholdSlider").addEventListener("input", () => {
+      $("thresholdValue").textContent = $("thresholdSlider").value;
+      if (!scanning && photos.length > 0) updateClassifications();
+    });
+
+    $("filterTabs").addEventListener("click", (e) => {
+      const tab = e.target.closest(".filter-tab");
+      if (!tab) return;
+      document.querySelectorAll(".filter-tab").forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+      currentFilter = tab.dataset.filter;
+      renderGrid();
+    });
+
+    $("sortSelect").addEventListener("change", () => { if (photos.length > 0) renderGrid(); });
+
+    $("photoGrid").addEventListener("click", (e) => {
+      const card = e.target.closest(".photo-card");
+      if (!card) return;
+      const p = card.dataset.path;
+      if (selected.has(p)) selected.delete(p); else selected.add(p);
+      renderGrid();
+    });
+
+    $("photoGrid").addEventListener("dblclick", (e) => {
+      const card = e.target.closest(".photo-card");
+      if (!card) return;
+      const photo = photos.find((p) => p.path === card.dataset.path);
+      if (!photo) return;
+      $("lightboxImg").src = "file://" + encodeURI(photo.path).replace(/#/g, "%23");
+      $("lightboxInfo").innerHTML = `<span>${photo.name}</span><span class="photo-badge ${photo.status}">${photo.score.toFixed(0)}</span>`;
+      $("lightbox").classList.remove("hidden");
+    });
+
+    $("lightbox").addEventListener("click", () => { $("lightbox").classList.add("hidden"); });
+
+    $("btnSelectAllBlurry").addEventListener("click", () => {
+      const t = parseInt($("thresholdSlider").value);
+      photos.forEach((p) => { if (classify(p.score, t) === "blurry") selected.add(p.path); });
+      renderGrid();
+    });
+
+    $("btnDeselectAll").addEventListener("click", () => { selected.clear(); renderGrid(); });
+
+    $("btnMoveSelected").addEventListener("click", async () => {
+      if (selected.size === 0) return;
+      const count = selected.size;
+
+      const defaultPath = folderPaths[0] || "";
+      const destFolder = await window.api.selectOutputFolder(defaultPath);
+      if (!destFolder) return;
+
+      if (!confirm(`Move ${count} photo${count !== 1 ? "s" : ""} to "${destFolder}"?`)) return;
+
+      const result = await window.api.moveToReview({
+        files: Array.from(selected),
+        sourceFolder: folderPaths[0],
+        reviewFolderName: "review_blurry",
+        destFolder,
+      });
+
+      const succeeded = result.results.filter((r) => r.success).length;
+      const failed = result.results.filter((r) => !r.success).length;
+
+      const movedFiles = new Set(result.results.filter((r) => r.success).map((r) => r.file));
+      photos = photos.filter((p) => !movedFiles.has(p.name));
+      selected.clear();
+      renderGrid();
+
+      let msg = `Moved ${succeeded} photo${succeeded !== 1 ? "s" : ""} to ${destFolder}`;
+      if (failed > 0) msg += `\n${failed} failed to move.`;
+      alert(msg);
+    });
+
+    // ── Right-click context menu ────────────────
+    $("photoGrid").addEventListener("contextmenu", (e) => {
+      const card = e.target.closest(".photo-card");
+      if (!card) return;
+      e.preventDefault();
+      const filePath = card.dataset.path;
+      window.api.showContextMenu(filePath);
+    });
+
+    // ── Stop scan ─────────────────────────────────
+    $("btnStopScan").addEventListener("click", () => {
+      scanAborted = true;
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") $("lightbox").classList.add("hidden");
+    });
+  </script>
+</body>
+</html>
