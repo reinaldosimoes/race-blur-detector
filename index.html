@@ -361,8 +361,8 @@
             <label>Threshold</label>
             <div class="threshold-group">
               <input type="range" class="threshold-slider" id="thresholdSlider"
-                     min="20" max="400" value="100" step="5" />
-              <span class="threshold-value" id="thresholdValue">100</span>
+                     min="100" max="2000" value="700" step="10" />
+              <span class="threshold-value" id="thresholdValue">700</span>
             </div>
             <span class="center-weight-label">center-weighted</span>
           </div>
@@ -430,7 +430,7 @@
     const $ = (id) => document.getElementById(id);
 
     // ── Blur Detection Engine ────────────────────
-    const ANALYSIS_SIZE = 800;
+    const ANALYSIS_SIZE = 400;
     const CENTER_WEIGHT = 0.6;
 
     function laplacianVariance(gray, w, h) {
@@ -627,7 +627,7 @@
 
         $("scanText").textContent = `Scanning ${files.length} photos...`;
         const total = files.length;
-        const BATCH = 3;
+        const BATCH = 8;
         let totalMs = 0;
         let processedCount = 0;
 
@@ -639,17 +639,9 @@
             try {
               const result = await Promise.race([
                 (async () => {
-                  const validation = await window.api.validateJpeg(f.path);
-                  if (!validation.valid) return { ...f, score: -1 };
                   const fileUrl = "file://" + encodeURI(f.path).replace(/#/g, "%23");
                   const score = await analyzeImage(fileUrl);
-                  // Generate thumbnail
-                  let thumbnail = null;
-                  try {
-                    const thumb = await window.api.generateThumbnail(f.path, 200);
-                    if (typeof thumb === "string") thumbnail = thumb;
-                  } catch {}
-                  return { ...f, score, thumbnail };
+                  return { ...f, score };
                 })(),
                 new Promise((resolve) => setTimeout(() => resolve({ ...f, score: -1 }), 30000))
               ]);
