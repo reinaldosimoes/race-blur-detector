@@ -11,4 +11,5 @@ contextBridge.exposeInMainWorld("api", {
   moveToReview: (payload) => ipcRenderer.invoke("move-to-review", payload),
   selectOutputFolder: (defaultPath) => ipcRenderer.invoke("select-output-folder", defaultPath),
   showContextMenu: (filePath) => ipcRenderer.invoke("show-context-menu", filePath),
+  openExternal: (url) => ipcRenderer.invoke("open-external", url),
 });

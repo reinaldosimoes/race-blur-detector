@@ -117,7 +117,10 @@ function generateThumbnail(filePath, maxDimension) {
     if (img.isEmpty()) {
       return { error: "could not load image" };
     }
-    const resized = img.resize({ width: maxDimension, height: maxDimension });
+    const size = img.getSize();
+    const resized = size.width >= size.height
+      ? img.resize({ width: maxDimension })
+      : img.resize({ height: maxDimension });
     return `data:image/png;base64,${resized.toPNG().toString("base64")}`;
   } catch (err) {
     return { error: err.message };
@@ -186,6 +189,10 @@ async function moveToReview({ files, sourceFolder, reviewFolderName, destFolder 
 }
 
 ipcMain.handle("move-to-review", async (_event, args) => moveToReview(args));
+
+ipcMain.handle("open-external", async (_event, url) => {
+  shell.openExternal(url);
+});
 
 ipcMain.handle("show-context-menu", async (_event, filePath) => {
   const menu = Menu.buildFromTemplate([
