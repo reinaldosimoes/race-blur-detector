@@ -1,6 +1,14 @@
-# Race Blur Detector
+<p align="center">
+  <img src="build/icon.png" alt="Race Blur Detector" width="80">
+</p>
 
-A desktop app to quickly cull blurry photos from running race shoots. Built with Electron.
+<h1 align="center">Race Blur Detector</h1>
+
+<p align="center">A desktop app to quickly cull blurry photos from running race shoots. Built with Electron.</p>
+
+<p align="center">
+  <a href="https://github.com/reinaldosimoes/race-blur-detector/releases/latest">Download latest release</a>
+</p>
 
 ## What it does
 
