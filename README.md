@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="build/icon.png" alt="Race Blur Detector" width="80">
+  <img src="build/icon.svg" alt="Race Blur Detector" width="80">
 </p>
 
 <h1 align="center">Race Blur Detector</h1>
